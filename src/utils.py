@@ -10,11 +10,11 @@ from src import models, onesignal_client
 def modify_player_id(uid, player_id, register=True):
     u = User.objects(uid=uid).modify(upsert=True, new=True, set__uid=uid)
     if register:
-	    if player_id not in u.player_ids:
-	        u.update(push__player_ids=player_id)
-	else:
-		if player_id in u.player_ids:
-			u.update(pull__player_ids=player_id)
+        if player_id not in u.player_ids:
+            u.update(push__player_ids=player_id)
+    else:
+        if player_id in u.player_ids:
+            u.update(pull__player_ids=player_id)
 
 
 def parse_params(params):
