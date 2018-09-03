@@ -104,3 +104,4 @@ venv.bak/
 .mypy_cache/
 *.sqlite
 test.py
+sample.py
