@@ -1,13 +1,31 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from flask_mongoengine import MongoEngine
+import redis
+import onesignal
 
-db = SQLAlchemy()
-migrate = Migrate()
+from settings import (
+    NAMEREDIS_HOST,
+    NAMEREDIS_PORT,
+    ONESIGNAL_APP_AUTH_KEY,
+    ONESIGNAL_USER_AUTH_KEY,
+    ONESIGNAL_APP_ID
+)
+
+db = MongoEngine()
+nameredis = redis.Redis(
+    host=NAMEREDIS_HOST,
+    port=NAMEREDIS_PORT)
+
+onesignal_client = onesignal.Client(
+    user_auth_key=ONESIGNAL_APP_AUTH_KEY,
+    app={
+        "app_auth_key": ONESIGNAL_USER_AUTH_KEY,
+        "app_id": ONESIGNAL_APP_ID
+    })
 
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask("Notifications")
     # Load common settings
     app.config.from_object('settings')
 
@@ -15,11 +33,8 @@ def create_app():
     from .views import register_blueprints
     register_blueprints(app)
 
-    # Setup Flask-SQLAlchemy
+    # Setup Flask-Mongo
     db.init_app(app)
-
-    # Setup Flask-Migrate
-    migrate.init_app(app, db)
 
     @app.route('/healthcheck', methods=['GET'])
     def healthcheck():
