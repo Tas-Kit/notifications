@@ -1,6 +1,8 @@
 import datetime
 from copy import deepcopy
+from werkzeug.exceptions import BadRequest
 from src import db, nameredis
+from src.constants import ERROR_CODE
 
 
 class GenericNotification(db.Document):
@@ -11,31 +13,42 @@ class GenericNotification(db.Document):
     }
 
     created = db.DateTimeField(default=datetime.datetime.utcnow, required=True, null=False)
-    unread = db.BooleanField(default=True, required=True, null=False)
+    unread = db.BooleanField(default=True, required=True)
 
-    def get_id_attrs(self):
-        return [attr for attr in dir(self) if attr.endswith('_id')]
-
-    def get_name_dict(self):
-        id_attrs = self.get_id_attrs()
-        name_dict = {}
-        for id_attr in id_attrs:
-            id_value = getattr(self, id_attr)
-            name = id_attr.replace('_id', '_name')
-            name_dict[name] = nameredis.get(id_value)
-            if name_dict[name] is not None:
-                name_dict[name] = name_dict[name].decode('utf-8')
-        return name_dict
+    def populate(self):
+        try:
+            for key, name in self.params.items():
+                value = nameredis.get(getattr(self, key))
+                if value is not None:
+                    setattr(self, name, value.decode('utf-8'))
+                print(getattr(self, name))
+        except Exception as e:
+            print(e)
+            bad_request = BadRequest('Unable to fetch name from nameredis')
+            bad_request.data = {
+                'detail': e,
+                'error_code': ERROR_CODE.NAMEREDIS_ERROR
+            }
+            raise bad_request
+        return self
 
     def get_contents(self):
         contents = deepcopy(self.contents)
-        name_dict = self.get_name_dict()
+        params = {
+            name: getattr(self, name, 'None')
+            for name in self.params.values()
+        }
         for lang, msg in self.contents.items():
-            contents[lang] = msg.format(**name_dict)
+            contents[lang] = msg.format(**params)
         return contents
 
 
 class InvitationNotification(GenericNotification):
+    params = {
+        'inviter_id': 'inviter_name',
+        'task_id': 'task_name'
+    }
+
     contents = {
         'en': '{inviter_name} invites you to join {task_name}.',
         'zh': '{inviter_name}邀请你加入{task_name}。'
@@ -44,3 +57,5 @@ class InvitationNotification(GenericNotification):
 
     inviter_id = db.StringField(max_length=40, required=True)
     task_id = db.StringField(max_length=40, required=True)
+    inviter_name = db.StringField(max_length=100)
+    task_name = db.StringField(max_length=100)

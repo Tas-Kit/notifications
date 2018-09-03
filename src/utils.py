@@ -29,7 +29,7 @@ def parse_params(params):
 def insert_notification(users, notitype, params):
     params = parse_params(params)
     try:
-        notification = getattr(models, notitype)(**params).save()
+        notification = getattr(models, notitype)(**params).populate().save()
         users.update(push__notifications=notification)
         return notification
     except Exception as e:
@@ -45,13 +45,14 @@ def insert_notification(users, notitype, params):
 def send_notification(users, notification):
 
     try:
-        new_notification = onesignal.Notification(contents=notification.get_contents())
-
+        contents = notification.get_contents()
+        print('contents', contents)
+        new_notification = onesignal.Notification(contents=contents)
         # set target Segments
         player_ids = []
         for user in users:
             player_ids += user.player_ids
-        new_notification.post_body['include_player_ids'] = player_ids
+        new_notification.post_body['include_player_ids'] = [str(player_id) for player_id in player_ids]
 
         # send notification, it will return a response
         onesignal_response = onesignal_client.send_notification(new_notification)
