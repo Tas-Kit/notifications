@@ -55,5 +55,13 @@ class UserNotificationView(Resource):
         args = user_parser.parse_args()
         uid = args['uid']
         player_id = args['player_id']
-        utils.register_player_id(uid, player_id)
+        utils.modify_player_id(uid, player_id, register=True)
+        return 'SUCCESS'
+
+    @internal_ns.doc('Remove Device', parser=user_parser)
+    def delete(self):
+        args = user_parser.parse_args()
+        uid = args['uid']
+        player_id = args['player_id']
+        utils.modify_player_id(uid, player_id, register=False)
         return 'SUCCESS'
