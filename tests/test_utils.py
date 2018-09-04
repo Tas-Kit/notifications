@@ -20,9 +20,10 @@ def test_get_data_ids():
 @patch('src.utils.get_data_ids', return_value=['i1', 't1', 'i2', 't2', 'i3', 't3'])
 @patch('src.nameredis.pipeline', return_value=MagicMock())
 def test_populate_name_cache(mock_pipeline, mock_get_data_ids):
-    mock_pipeline.return_value.execute.return_value = ['i1_value', 't1_value',
-                                                       'i2_value', 't2_value',
-                                                       'i3_value', 't3_value']
+    mock_pipeline.return_value.execute.return_value = [
+        'i1_value'.encode('utf-8'), 't1_value'.encode('utf-8'),
+        'i2_value'.encode('utf-8'), 't2_value'.encode('utf-8'),
+        'i3_value'.encode('utf-8'), 't3_value'.encode('utf-8')]
     n1 = InvitationNotification(inviter_id='i1', task_id='t1')
     n2 = InvitationNotification(inviter_id='i2', task_id='t2')
     n3 = InvitationNotification(inviter_id='i3', task_id='t3')

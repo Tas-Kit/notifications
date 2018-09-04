@@ -36,7 +36,7 @@ def populate_name_cache(notifications):
             pipe.get(data_id)
         values = pipe.execute()
         for i in range(len(ids)):
-            name_cache[ids[i]] = values[i]
+            name_cache[ids[i]] = values[i].decode('utf-8')
     except Exception as e:
         handle_error(e, ERROR_CODE.NAMEREDIS_ERROR)
 
@@ -83,12 +83,14 @@ def get_player_ids(users):
     player_ids = []
     for user in users:
         player_ids += user.player_ids
-    return [str(player_id) for player_id in player_ids]
+    player_ids = [str(player_id) for player_id in player_ids]
+    print(player_ids)
+    return player_ids
 
 
 def send_notification(users, notification):
     try:
-        populate_name_cache(notification)
+        populate_name_cache([notification])
         contents = notification.get_contents()
         new_notification = onesignal.Notification(contents=contents)
         # set target

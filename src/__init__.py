@@ -18,9 +18,9 @@ nameredis = redis.Redis(
     port=NAMEREDIS_PORT)
 
 onesignal_client = onesignal.Client(
-    user_auth_key=ONESIGNAL_APP_AUTH_KEY,
+    user_auth_key=ONESIGNAL_USER_AUTH_KEY,
     app={
-        "app_auth_key": ONESIGNAL_USER_AUTH_KEY,
+        "app_auth_key": ONESIGNAL_APP_AUTH_KEY,
         "app_id": ONESIGNAL_APP_ID
     })
 
