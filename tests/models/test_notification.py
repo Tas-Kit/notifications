@@ -13,6 +13,24 @@ def nameredis_get_side_effect(key):
 
 class TestGenericNotification(object):
 
+    def test_serialize(self):
+        invitation = InvitationNotification(task_id='task_id', inviter_id='inviter_id').save()
+        invitation.task_name = 'task_name'
+        invitation.inviter_name = 'inviter_name'
+        serialization = invitation.serialize()
+        assert serialization['task_id'] == 'task_id'
+        assert serialization['inviter_id'] == 'inviter_id'
+        assert serialization['task_name'] == 'task_name'
+        assert serialization['inviter_name'] == 'inviter_name'
+        assert serialization['unread']
+        assert serialization['nid'] == str(invitation.id)
+        assert serialization['created'] == str(invitation.created)
+        assert serialization['type'] == 'GenericNotification.InvitationNotification'
+        assert serialization['contents'] == {
+            'en': 'inviter_name invites you to join task_name.',
+            'zh': 'inviter_name邀请你加入task_name。'
+        }
+
     def test_get_contents(self):
         invitation = InvitationNotification()
         invitation.task_name = 'task_name'

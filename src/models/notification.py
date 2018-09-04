@@ -19,6 +19,7 @@ class GenericNotification(db.Document):
         for key, value in self.params.items():
             data[key] = getattr(self, key)
             data[value] = getattr(self, value)
+        data['nid'] = str(self.id)
         data['type'] = self._cls
         data['contents'] = self.get_contents()
         data['unread'] = self.unread
