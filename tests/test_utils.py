@@ -1,12 +1,39 @@
 import pytest
 import json
-from src import utils
-from src.models import User
+from src import utils, name_cache
+from src.models import User, InvitationNotification
 from uuid import uuid4
 from mongoengine.errors import DoesNotExist
 from werkzeug.exceptions import BadRequest
 from mock import patch, MagicMock
 from onesignal.error import OneSignalError
+
+
+def test_get_data_ids():
+    n1 = InvitationNotification(inviter_id='i1', task_id='t1')
+    n2 = InvitationNotification(inviter_id='i2', task_id='t2')
+    n3 = InvitationNotification(inviter_id='i3', task_id='t3')
+    notis = [n1, n2, n3]
+    assert set(['i1', 'i2', 'i3', 't1', 't2', 't3']) == set(utils.get_data_ids(notis))
+
+
+@patch('src.utils.get_data_ids', return_value=['i1', 't1', 'i2', 't2', 'i3', 't3'])
+@patch('src.nameredis.pipeline', return_value=MagicMock())
+def test_populate_name_cache(mock_pipeline, mock_get_data_ids):
+    mock_pipeline.return_value.execute.return_value = ['i1_value', 't1_value',
+                                                       'i2_value', 't2_value',
+                                                       'i3_value', 't3_value']
+    n1 = InvitationNotification(inviter_id='i1', task_id='t1')
+    n2 = InvitationNotification(inviter_id='i2', task_id='t2')
+    n3 = InvitationNotification(inviter_id='i3', task_id='t3')
+    notis = [n1, n2, n3]
+    utils.populate_name_cache(notis)
+    assert name_cache['i1'] == 'i1_value'
+    assert name_cache['t1'] == 't1_value'
+    assert name_cache['i2'] == 'i2_value'
+    assert name_cache['t2'] == 't2_value'
+    assert name_cache['i3'] == 'i3_value'
+    assert name_cache['t3'] == 't3_value'
 
 
 @patch('src.utils.send_notification')
@@ -49,16 +76,11 @@ def test_get_player_ids():
     assert player_ids_str == utils.get_player_ids([u1, u2])
 
 
-def populate_side_effect(self):
-    return self
-
-
-@patch('src.models.GenericNotification.populate', autospec=True, side_effect=populate_side_effect)
 @patch('src.utils.parse_params', return_value={
     'inviter_id': 'inviter',
     'task_id': 'task'
 })
-def test_insert_notification(mock_parse_params, mock_populate):
+def test_insert_notification(mock_parse_params):
     uid1 = str(uuid4())
     uid2 = str(uuid4())
     users = [User(uid=uid1).save(), User(uid=uid2).save()]

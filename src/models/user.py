@@ -1,5 +1,5 @@
 import mongoengine
-from src import db
+from src import db, utils
 from src.models import GenericNotification
 
 
@@ -9,7 +9,9 @@ class User(db.Document):
     notifications = db.ListField(db.ReferenceField(GenericNotification, reverse_delete_rule=mongoengine.PULL))
 
     def serialize_notifications(self, count=100):
-        notifications = []
-        for notification in self.notifications[-100:]:
-            notifications.append(notification.serialize())
-        return notifications[::-1]
+        notifications = self.notifications[-100:]
+        utils.populate_name_cache(notifications)
+        serialized_notifications = []
+        for notification in notifications:
+            serialized_notifications.append(notification.serialize())
+        return serialized_notifications[::-1]

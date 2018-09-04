@@ -2,6 +2,7 @@ from flask import Flask
 from flask_mongoengine import MongoEngine
 import redis
 import onesignal
+from collections import defaultdict
 
 from settings import (
     NAMEREDIS_HOST,
@@ -22,6 +23,8 @@ onesignal_client = onesignal.Client(
         "app_auth_key": ONESIGNAL_USER_AUTH_KEY,
         "app_id": ONESIGNAL_APP_ID
     })
+
+name_cache = defaultdict(str)
 
 
 def create_app():

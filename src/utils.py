@@ -6,17 +6,39 @@ from mongoengine.errors import ValidationError
 
 from src.constants import ERROR_CODE
 from src.models import User
-from src import models, onesignal_client
+from src import models, onesignal_client, nameredis, name_cache
 
 
 def handle_error(error, error_code):
     print(error)
     bad_request = BadRequest()
     bad_request.data = {
-        'detail': error,
+        'detail': str(error),
         'error_code': error_code
     }
     raise bad_request
+
+
+def get_data_ids(notifications):
+    ids = set()
+    for notification in notifications:
+        for key in notification.params.keys():
+            data_id = getattr(notification, key, None)
+            ids.add(data_id)
+    return list(ids)
+
+
+def populate_name_cache(notifications):
+    ids = get_data_ids(notifications)
+    try:
+        pipe = nameredis.pipeline()
+        for data_id in ids:
+            pipe.get(data_id)
+        values = pipe.execute()
+        for i in range(len(ids)):
+            name_cache[ids[i]] = values[i]
+    except Exception as e:
+        handle_error(e, ERROR_CODE.NAMEREDIS_ERROR)
 
 
 def get_user(uid):
@@ -46,7 +68,6 @@ def insert_notification(users, notitype, params):
     try:
         notification_class = getattr(models, notitype)
         notification = notification_class(**params)
-        notification = notification.populate()
         notification = notification.save()
         users.update(push__notifications=notification)
         return notification
@@ -67,6 +88,7 @@ def get_player_ids(users):
 
 def send_notification(users, notification):
     try:
+        populate_name_cache(notification)
         contents = notification.get_contents()
         new_notification = onesignal.Notification(contents=contents)
         # set target
