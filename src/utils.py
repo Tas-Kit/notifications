@@ -19,9 +19,13 @@ def handle_error(error, error_code):
     raise bad_request
 
 
+def get_user(uid):
+    return User.objects(uid=uid).modify(upsert=True, new=True, set__uid=uid)
+
+
 def modify_player_id(uid, player_id, register=True):
     player_id = UUID(player_id)
-    u = User.objects(uid=uid).modify(upsert=True, new=True, set__uid=uid)
+    u = get_user(uid)
     if register:
         if player_id not in u.player_ids:
             u.update(push__player_ids=player_id)

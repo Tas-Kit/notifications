@@ -12,7 +12,18 @@ class GenericNotification(db.Document):
     }
 
     created = db.DateTimeField(default=datetime.datetime.utcnow, required=True, null=False)
-    unread = db.BooleanField(default=True, required=True)
+    unread = db.BooleanField(default=True, required=True, null=False)
+
+    def serialize(self):
+        data = {}
+        for key, value in self.params.items():
+            data[key] = getattr(self, key)
+            data[value] = getattr(self, value)
+        data['type'] = self._cls
+        data['contents'] = self.get_contents()
+        data['unread'] = self.unread
+        data['created'] = str(self.created)
+        return data
 
     def populate(self):
         try:

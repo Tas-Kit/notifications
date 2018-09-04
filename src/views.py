@@ -33,6 +33,9 @@ user_parser = reqparse.RequestParser()
 user_parser.add_argument('uid', type=str, location='cookies')
 user_parser.add_argument('player_id', type=str, location='form')
 
+uid_parser = reqparse.RequestParser()
+uid_parser.add_argument('uid', type=str, location='cookies')
+
 
 @internal_ns.route('/')
 class SendNotificationView(Resource):
@@ -49,6 +52,15 @@ class SendNotificationView(Resource):
 
 @user_ns.route('/')
 class UserNotificationView(Resource):
+
+    @internal_ns.doc('Get all notifications', parser=uid_parser)
+    def get(self):
+        args = uid_parser.parse_args()
+        uid = args['uid']
+        user = utils.get_user(uid)
+        return {
+            'notifications': user.serialize_notifications()
+        }
 
     @internal_ns.doc('Register Device', parser=user_parser)
     def post(self):
