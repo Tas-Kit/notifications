@@ -9,4 +9,4 @@ class TestUser(object):
         user = User()
         user.notifications = [GenericNotification() for _ in range(3)]
         result = user.serialize_notifications()
-        assert ['a', 'b', 'c'] == result
+        assert ['c', 'b', 'a'] == result

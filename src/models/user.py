@@ -8,8 +8,8 @@ class User(db.Document):
     player_ids = db.ListField(db.UUIDField(required=True))
     notifications = db.ListField(db.ReferenceField(GenericNotification, reverse_delete_rule=mongoengine.PULL))
 
-    def serialize_notifications(self):
+    def serialize_notifications(self, count=100):
         notifications = []
-        for notification in self.notifications:
+        for notification in self.notifications[-100:]:
             notifications.append(notification.serialize())
-        return notifications
+        return notifications[::-1]
