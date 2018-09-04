@@ -40,7 +40,10 @@ def parse_params(params):
 def insert_notification(users, notitype, params):
     params = parse_params(params)
     try:
-        notification = getattr(models, notitype)(**params).populate().save()
+        notification_class = getattr(models, notitype)
+        notification = notification_class(**params)
+        notification = notification.populate()
+        notification = notification.save()
         users.update(push__notifications=notification)
         return notification
     except AttributeError as e:
@@ -51,23 +54,26 @@ def insert_notification(users, notitype, params):
         handle_error(e, ERROR_CODE.DATABASE_ERROR)
 
 
-def send_notification(users, notification):
+def get_player_ids(users):
+    player_ids = []
+    for user in users:
+        player_ids += user.player_ids
+    return [str(player_id) for player_id in player_ids]
 
+
+def send_notification(users, notification):
     try:
         contents = notification.get_contents()
         new_notification = onesignal.Notification(contents=contents)
-        # set target Segments
-        player_ids = []
-        for user in users:
-            player_ids += user.player_ids
-        new_notification.post_body['include_player_ids'] = [str(player_id) for player_id in player_ids]
+        # set target
+        new_notification.post_body['include_player_ids'] = get_player_ids(users)
 
         # send notification, it will return a response
         onesignal_response = onesignal_client.send_notification(new_notification)
         print(onesignal_response.status_code)
         print(onesignal_response.json())
 
-    except onesignal.OneSignalError as e:
+    except onesignal.error.OneSignalError as e:
         handle_error(e, ERROR_CODE.SEND_NOTIFICATION_ERROR)
 
 

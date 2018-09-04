@@ -1,7 +1,6 @@
 import datetime
 from copy import deepcopy
-from werkzeug.exceptions import BadRequest
-from src import db, nameredis
+from src import db, nameredis, utils
 from src.constants import ERROR_CODE
 
 
@@ -18,19 +17,13 @@ class GenericNotification(db.Document):
     def populate(self):
         try:
             for key, name in self.params.items():
-                value = nameredis.get(getattr(self, key))
+                attr_id = getattr(self, key)
+                value = nameredis.get(attr_id)
                 if value is not None:
                     setattr(self, name, value.decode('utf-8'))
-                print(getattr(self, name))
+            return self
         except Exception as e:
-            print(e)
-            bad_request = BadRequest('Unable to fetch name from nameredis')
-            bad_request.data = {
-                'detail': e,
-                'error_code': ERROR_CODE.NAMEREDIS_ERROR
-            }
-            raise bad_request
-        return self
+            utils.handle_error(e, ERROR_CODE.NAMEREDIS_ERROR)
 
     def get_contents(self):
         contents = deepcopy(self.contents)
@@ -55,7 +48,7 @@ class InvitationNotification(GenericNotification):
     }
     _cls = 'InvitationNotification'
 
-    inviter_id = db.StringField(max_length=40, required=True)
-    task_id = db.StringField(max_length=40, required=True)
+    inviter_id = db.StringField(max_length=40, required=True, null=False)
+    task_id = db.StringField(max_length=40, required=True, null=False)
     inviter_name = db.StringField(max_length=100)
     task_name = db.StringField(max_length=100)
