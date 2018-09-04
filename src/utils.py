@@ -1,13 +1,26 @@
 from werkzeug.exceptions import BadRequest
 import json
 import onesignal
+from uuid import UUID
+from mongoengine.errors import ValidationError
 
 from src.constants import ERROR_CODE
 from src.models import User
 from src import models, onesignal_client
 
 
+def handle_error(error, error_code):
+    print(error)
+    bad_request = BadRequest()
+    bad_request.data = {
+        'detail': error,
+        'error_code': error_code
+    }
+    raise bad_request
+
+
 def modify_player_id(uid, player_id, register=True):
+    player_id = UUID(player_id)
     u = User.objects(uid=uid).modify(upsert=True, new=True, set__uid=uid)
     if register:
         if player_id not in u.player_ids:
@@ -21,13 +34,7 @@ def parse_params(params):
     try:
         return json.loads(params)
     except Exception as e:
-        print(e)
-        bad_request = BadRequest('Unable to parse json')
-        bad_request.data = {
-            'detail': e,
-            'error_code': ERROR_CODE.JSON_PARSE_ERROR
-        }
-        raise bad_request
+        handle_error(e, ERROR_CODE.JSON_PARSE_ERROR)
 
 
 def insert_notification(users, notitype, params):
@@ -36,21 +43,18 @@ def insert_notification(users, notitype, params):
         notification = getattr(models, notitype)(**params).populate().save()
         users.update(push__notifications=notification)
         return notification
+    except AttributeError as e:
+        handle_error(e, ERROR_CODE.NOTIFICATION_CLASS_ERROR)
+    except ValidationError as e:
+        handle_error(e, ERROR_CODE.VALIDATION_ERROR)
     except Exception as e:
-        print(e)
-        bad_request = BadRequest('Unable to insert notification')
-        bad_request.data = {
-            'detail': e,
-            'error_code': ERROR_CODE.DATABASE_ERROR
-        }
-        raise bad_request
+        handle_error(e, ERROR_CODE.DATABASE_ERROR)
 
 
 def send_notification(users, notification):
 
     try:
         contents = notification.get_contents()
-        print('contents', contents)
         new_notification = onesignal.Notification(contents=contents)
         # set target Segments
         player_ids = []
@@ -64,13 +68,7 @@ def send_notification(users, notification):
         print(onesignal_response.json())
 
     except onesignal.OneSignalError as e:
-        print(e)
-        bad_request = BadRequest('Unable to send notification')
-        bad_request.data = {
-            'detail': e,
-            'error_code': ERROR_CODE.SEND_NOTIFICATION_ERROR
-        }
-        raise bad_request
+        handle_error(e, ERROR_CODE.SEND_NOTIFICATION_ERROR)
 
 
 def push_notification(uid_list, notitype, params):

@@ -105,3 +105,4 @@ venv.bak/
 *.sqlite
 test.py
 sample.py
+/assets
