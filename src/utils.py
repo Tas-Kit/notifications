@@ -1,12 +1,14 @@
 from werkzeug.exceptions import BadRequest
 import json
-import onesignal
+from requests.exceptions import HTTPError
+from onesignalclient.notification import Notification
 from uuid import UUID
 from mongoengine.errors import ValidationError
 
 from src.constants import ERROR_CODE
 from src.models import User
 from src import models, onesignal_client, nameredis, name_cache
+from settings import ONESIGNAL_APP_ID
 
 
 def handle_error(error, error_code):
@@ -89,20 +91,21 @@ def get_player_ids(users):
 
 
 def send_notification(users, notification):
+    populate_name_cache([notification])
+    contents = notification.get_contents()
+    new_notification = Notification(
+        ONESIGNAL_APP_ID,
+        Notification.DEVICES_MODE)
+    # set target
+    new_notification.include_player_ids = get_player_ids(users)
+    new_notification.contents = contents
+
     try:
-        populate_name_cache([notification])
-        contents = notification.get_contents()
-        new_notification = onesignal.Notification(contents=contents)
-        # set target
-        new_notification.post_body['include_player_ids'] = get_player_ids(users)
-
-        # send notification, it will return a response
-        onesignal_response = onesignal_client.send_notification(new_notification)
-        print(onesignal_response.status_code)
-        print(onesignal_response.json())
-
-    except onesignal.error.OneSignalError as e:
-        handle_error(e, ERROR_CODE.SEND_NOTIFICATION_ERROR)
+        # Sends it!
+        result = onesignal_client.create_notification(new_notification)
+        print(result)
+    except HTTPError as e:
+        result = e.response.json()
 
 
 def push_notification(uid_list, notitype, params):

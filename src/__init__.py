@@ -1,13 +1,12 @@
 from flask import Flask
 from flask_mongoengine import MongoEngine
 import redis
-import onesignal
 from collections import defaultdict
+from onesignalclient.app_client import OneSignalAppClient
 
 from settings import (
     NAMEREDIS_HOST,
     NAMEREDIS_PORT,
-    ONESIGNAL_APP_AUTH_KEY,
     ONESIGNAL_USER_AUTH_KEY,
     ONESIGNAL_APP_ID
 )
@@ -17,12 +16,9 @@ nameredis = redis.Redis(
     host=NAMEREDIS_HOST,
     port=NAMEREDIS_PORT)
 
-onesignal_client = onesignal.Client(
-    user_auth_key=ONESIGNAL_USER_AUTH_KEY,
-    app={
-        "app_auth_key": ONESIGNAL_APP_AUTH_KEY,
-        "app_id": ONESIGNAL_APP_ID
-    })
+onesignal_client = OneSignalAppClient(
+    app_id=ONESIGNAL_APP_ID,
+    app_api_key=ONESIGNAL_USER_AUTH_KEY)
 
 name_cache = defaultdict(str)
 
