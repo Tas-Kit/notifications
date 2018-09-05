@@ -59,7 +59,9 @@ class SendNotificationView(Resource):
         notitype = args['notitype']
         params = args['params']
         utils.push_notification(uid_list, notitype, params)
-        return 'SUCCESS'
+        return {
+            'result': 'SUCCESS'
+        }
 
 
 @user_ns.route('/')
@@ -77,6 +79,19 @@ class UserNotificationView(Resource):
             'notifications': user.serialize_notifications()
         }
 
+    @internal_ns.doc('Read all notifications', parser=uid_parser)
+    def put(self):
+        """
+        User read all notifications.
+        """
+        args = uid_parser.parse_args()
+        uid = args['uid']
+        user = utils.get_user(uid)
+        user.read_notifications()
+        return {
+            'result': 'SUCCESS'
+        }
+
     @internal_ns.doc('Register Device', parser=user_parser)
     def post(self):
         """
@@ -86,7 +101,9 @@ class UserNotificationView(Resource):
         uid = args['uid']
         player_id = args['player_id']
         utils.modify_player_id(uid, player_id, register=True)
-        return 'SUCCESS'
+        return {
+            'result': 'SUCCESS'
+        }
 
     @internal_ns.doc('Remove Device', parser=user_parser)
     def delete(self):
@@ -97,4 +114,6 @@ class UserNotificationView(Resource):
         uid = args['uid']
         player_id = args['player_id']
         utils.modify_player_id(uid, player_id, register=False)
-        return 'SUCCESS'
+        return {
+            'result': 'SUCCESS'
+        }
