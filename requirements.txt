@@ -5,3 +5,4 @@ flask-restplus
 flask-script
 requests
 redis
+onesignal
