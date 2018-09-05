@@ -1,12 +1,12 @@
 import pytest
 import json
+from requests.exceptions import HTTPError
 from src import utils, name_cache
 from src.models import User, InvitationNotification
 from uuid import uuid4
 from mongoengine.errors import DoesNotExist
 from werkzeug.exceptions import BadRequest
 from mock import patch, MagicMock
-from onesignal.error import OneSignalError
 
 
 def test_get_data_ids():
@@ -50,19 +50,19 @@ def test_push_notification(mock_user, mock_insert_notification, mock_send_notifi
     mock_send_notification.called_once_with(mock_user.return_value, mock_insert_notification.return_value)
 
 
-@patch('onesignal.Notification')
-@patch('src.onesignal_client.send_notification')
+@patch('onesignalclient.notification.Notification')
+@patch('src.onesignal_client.create_notification')
 def test_send_notification(mock_send_notification, mock_notification):
     mock_notification.return_value = MagicMock()
     users = MagicMock()
-    contents = MagicMock()
+    contents = {'en': 'hello'}
     notification = MagicMock()
     notification.get_contents.return_value = contents
     utils.send_notification(users, notification)
     mock_notification.called_once_with(contents)
     mock_send_notification.called_once()
 
-    mock_send_notification.side_effect = OneSignalError()
+    mock_send_notification.side_effect = HTTPError()
     with pytest.raises(BadRequest):
         utils.send_notification(users, notification)
 

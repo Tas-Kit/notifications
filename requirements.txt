@@ -6,3 +6,8 @@ flask-script
 requests
 redis
 onesignal-python
+
+pytest
+pytest-html
+pytest-cov
+mock

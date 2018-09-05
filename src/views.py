@@ -40,8 +40,20 @@ uid_parser.add_argument('uid', type=str, location='cookies')
 @internal_ns.route('/')
 class SendNotificationView(Resource):
 
-    @internal_ns.doc('Send Notifications', parser=internal_parser)
+    @internal_ns.doc('Send Notifications', params={
+        'uid_list': 'uid seperated by , ',
+        'notitype': 'type of notification see in \
+        https://github.com/Tas-Kit/notifications/blob/master/src/models/notification.py',
+        'params': 'json dictionary of the notification params. All params \
+        (keys in the dictionary) required'
+    }, parser=internal_parser)
     def post(self):
+        """
+        Send Notifications.
+        Send notifications to list of users.
+        Notifications will construct the notification instances using the notitype.
+        The all params in the notification are required.
+        """
         args = internal_parser.parse_args()
         uid_list = args['uid_list']
         notitype = args['notitype']
@@ -55,6 +67,9 @@ class UserNotificationView(Resource):
 
     @internal_ns.doc('Get all notifications', parser=uid_parser)
     def get(self):
+        """
+        Get all notifications for current user.
+        """
         args = uid_parser.parse_args()
         uid = args['uid']
         user = utils.get_user(uid)
@@ -64,6 +79,9 @@ class UserNotificationView(Resource):
 
     @internal_ns.doc('Register Device', parser=user_parser)
     def post(self):
+        """
+        Register the device for current user.
+        """
         args = user_parser.parse_args()
         uid = args['uid']
         player_id = args['player_id']
@@ -72,6 +90,9 @@ class UserNotificationView(Resource):
 
     @internal_ns.doc('Remove Device', parser=user_parser)
     def delete(self):
+        """
+        Unregister a device for current user.
+        """
         args = user_parser.parse_args()
         uid = args['uid']
         player_id = args['player_id']

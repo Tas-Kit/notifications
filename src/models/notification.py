@@ -13,7 +13,6 @@ class GenericNotification(db.Document):
 
     nid = db.UUIDField(default=uuid4, primary_key=True)
     created = db.DateTimeField(default=datetime.datetime.utcnow, required=True, null=False)
-    unread = db.BooleanField(default=True, required=True, null=False)
 
     def serialize(self):
         data = {}
@@ -22,7 +21,6 @@ class GenericNotification(db.Document):
         data['nid'] = str(self.nid)
         data['type'] = self._cls
         data['contents'] = self.get_contents()
-        data['unread'] = self.unread
         data['created'] = str(self.created)
         return data
 

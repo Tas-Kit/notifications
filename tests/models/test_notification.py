@@ -19,7 +19,6 @@ class TestGenericNotification(object):
         serialization = invitation.serialize()
         assert serialization['task_id'] == 'task_id'
         assert serialization['inviter_id'] == 'inviter_id'
-        assert serialization['unread']
         assert serialization['nid'] == str(invitation.nid)
         assert serialization['created'] == str(invitation.created)
         assert serialization['type'] == 'GenericNotification.InvitationNotification'

@@ -105,7 +105,7 @@ def send_notification(users, notification):
         result = onesignal_client.create_notification(new_notification)
         print(result)
     except HTTPError as e:
-        result = e.response.json()
+        handle_error(e, ERROR_CODE.SEND_NOTIFICATION_ERROR)
 
 
 def push_notification(uid_list, notitype, params):

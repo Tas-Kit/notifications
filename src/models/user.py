@@ -7,6 +7,7 @@ from src.models import GenericNotification
 class User(db.Document):
     uid = db.UUIDField(required=True, primary_key=True)
     player_ids = db.ListField(db.UUIDField(required=True))
+    read = db.MapField(field=db.BooleanField(default=False, required=True))
     notifications = db.ListField(db.ReferenceField(GenericNotification, reverse_delete_rule=mongoengine.PULL))
 
     def serialize_notifications(self):
@@ -14,5 +15,12 @@ class User(db.Document):
         utils.populate_name_cache(notifications)
         serialized_notifications = []
         for notification in notifications:
-            serialized_notifications.append(notification.serialize())
+            serialized_notification = notification.serialize()
+            if str(notification.nid) not in self.read:
+                serialized_notification['read'] = False
+                self.read[str(notification.nid)] = True
+            else:
+                serialized_notification['read'] = True
+            serialized_notifications.append(serialized_notification)
+        self.update(read=self.read)
         return serialized_notifications[::-1]
